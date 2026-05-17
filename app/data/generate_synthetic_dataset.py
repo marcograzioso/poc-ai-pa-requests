@@ -17,12 +17,13 @@ from app.utils.constants import CATEGORIES, CATEGORY_TO_OFFICE
 RANDOM_SEED = 42
 
 CATEGORY_WEIGHTS = {
-    "Anagrafe": 0.24,
-    "Tributi": 0.22,
+    "Anagrafe": 0.22,
+    "Tributi": 0.21,
     "Edilizia": 0.14,
-    "Mobilita": 0.16,
-    "Ambiente": 0.15,
+    "Mobilita": 0.15,
+    "Ambiente": 0.14,
     "Servizi Sociali": 0.09,
+    "Non Pertinente": 0.05,
 }
 
 PRIORITY_DISTRIBUTION = {
@@ -71,6 +72,13 @@ REQUEST_TEMPLATES: Dict[str, List[str]] = {
         "Domando accesso al servizio assistenza domiciliare per genitore non autosufficiente.",
         "Necessito di appuntamento con assistente sociale per situazione familiare urgente.",
         "Chiedo chiarimenti su bonus alimentare e documentazione da presentare.",
+    ],
+    "Non Pertinente": [
+        "Volevo sapere i numeri vincenti del lotto di questa sera.",
+        "Offro consulenza commerciale per aumentare vendite, contattatemi subito.",
+        "Perche il mio smartphone si scarica velocemente?",
+        "Messaggio promozionale: click qui per ricevere buoni regalo.",
+        "Salve, questo non riguarda il comune ma un problema con il mio modem.",
     ],
 }
 
@@ -129,11 +137,46 @@ def build_request_text(category: str) -> str:
     return base
 
 
-def build_operator_response(priority: str) -> str:
+def build_operator_response(priority: str, category: str) -> str:
     """Create formal but varied PA operator responses."""
+    if category == "Non Pertinente":
+        return (
+            "Gentile cittadino/a, la comunicazione ricevuta non risulta pertinente ai servizi "
+            "erogati da questo Ente oppure presenta caratteristiche riconducibili a contenuti non "
+            "istituzionali. La invitiamo a inoltrare una richiesta attinente ai procedimenti comunali."
+        )
+
     base = random.choice(RESPONSE_TEMPLATES)
     days = {"low": 10, "medium": 7, "high": 4, "urgent": 2}[priority]
     return base.format(days=days)
+
+
+def ensure_non_pertinente_presence(rows: List[Dict[str, str]], start_index: int) -> List[Dict[str, str]]:
+    """Guarantee that dataset always contains non-pertinent/spam examples."""
+    current_count = sum(1 for row in rows if row.get("category") == "Non Pertinente")
+    min_required = max(10, int(len(rows) * 0.02))
+    missing = max(0, min_required - current_count)
+    if missing == 0:
+        return rows
+
+    now = datetime(2026, 1, 1, 9, 0)
+    for i in range(missing):
+        created_at = now + timedelta(days=i)
+        rows.append(
+            {
+                "request_id": f"REQ-NP-{start_index + i + 1:04d}",
+                "citizen_request_text": random.choice(REQUEST_TEMPLATES["Non Pertinente"]),
+                "category": "Non Pertinente",
+                "office": CATEGORY_TO_OFFICE["Non Pertinente"],
+                "priority": "low",
+                "status": "resolved",
+                "operator_response": build_operator_response("low", "Non Pertinente"),
+                "created_at": created_at.isoformat(),
+                "resolved_at": (created_at + timedelta(days=2)).isoformat(),
+            }
+        )
+
+    return rows
 
 
 def generate_rows(num_rows: int) -> List[Dict[str, str]]:
@@ -159,7 +202,7 @@ def generate_rows(num_rows: int) -> List[Dict[str, str]]:
             "office": office,
             "priority": priority,
             "status": status,
-            "operator_response": build_operator_response(priority),
+            "operator_response": build_operator_response(priority, category),
             "created_at": created_at.isoformat(),
             "resolved_at": resolved_at.isoformat() if status == "resolved" else "",
         }
@@ -170,6 +213,8 @@ def generate_rows(num_rows: int) -> List[Dict[str, str]]:
         duplicate = rows[random.randint(0, len(rows) - 1)].copy()
         duplicate["request_id"] = f"REQ-DUP-{i + 1:04d}"
         rows.append(duplicate)
+
+    rows = ensure_non_pertinente_presence(rows, start_index=len(rows))
 
     return rows
 

@@ -46,7 +46,11 @@ def analyze_request(payload: AnalyzeRequest) -> AnalysisResponse:
 def generate_draft(payload: DraftRequest) -> DraftResponse:
     """Generate draft response using semantic retrieval and local LLM."""
     try:
-        result = orchestrator.generate_draft(payload.citizen_request_text, top_k=payload.top_k)
+        result = orchestrator.generate_draft(
+            payload.citizen_request_text,
+            top_k=payload.top_k,
+            model=payload.model,
+        )
         cases = [SimilarCase(**item) for item in result["retrieved_cases"]]
         return DraftResponse(
             draft_response=str(result["draft_response"]),

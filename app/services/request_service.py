@@ -61,10 +61,20 @@ class RequestOrchestrationService:
                 "confidence": predictions["priority"].confidence,
             },
         }
-        write_audit_log("analysis", json.dumps({"text": text, "result": response}, ensure_ascii=False))
+        write_audit_log(
+            "analysis",
+            json.dumps(
+                {
+                    "text": text,
+                    "result": response,
+                    "model_used": "classification_pipeline",
+                },
+                ensure_ascii=False,
+            ),
+        )
         return response
 
-    def generate_draft(self, text: str, top_k: int = 5) -> Dict[str, object]:
+    def generate_draft(self, text: str, top_k: int = 5, model: str | None = None) -> Dict[str, object]:
         """Create AI-assisted operator draft response from retrieved cases."""
         if self.rag_assistant is None:
             raise RuntimeError(
@@ -72,11 +82,15 @@ class RequestOrchestrationService:
                 f"(dettaglio: {self.rag_error})"
             )
 
-        result = self.rag_assistant.draft_response(new_request=text, top_k=top_k)
-        write_audit_log("rag_draft", json.dumps({"text": text, "top_k": top_k}, ensure_ascii=False))
+        selected_model = model or (self.llm.model if self.llm is not None else "unknown")
+        result = self.rag_assistant.draft_response(new_request=text, top_k=top_k, model=selected_model)
+        write_audit_log(
+            "rag_draft",
+            json.dumps({"text": text, "top_k": top_k, "model_used": selected_model}, ensure_ascii=False),
+        )
         return result
 
-    def generate_draft_stream(self, text: str, top_k: int = 5) -> Dict[str, object]:
+    def generate_draft_stream(self, text: str, top_k: int = 5, model: str | None = None) -> Dict[str, object]:
         """Create streamed AI-assisted draft response from retrieved cases."""
         if self.rag_assistant is None:
             raise RuntimeError(
@@ -84,7 +98,12 @@ class RequestOrchestrationService:
                 f"(dettaglio: {self.rag_error})"
             )
 
-        retrieved_cases, stream = self.rag_assistant.draft_response_stream(new_request=text, top_k=top_k)
+        selected_model = model or (self.llm.model if self.llm is not None else "unknown")
+        retrieved_cases, stream = self.rag_assistant.draft_response_stream(
+            new_request=text,
+            top_k=top_k,
+            model=selected_model,
+        )
 
         def tracked_stream() -> Iterator[str]:
             chunks: list[str] = []
@@ -98,6 +117,7 @@ class RequestOrchestrationService:
                     {
                         "text": text,
                         "top_k": top_k,
+                        "model_used": selected_model,
                         "draft_len": len("".join(chunks)),
                     },
                     ensure_ascii=False,
@@ -107,9 +127,10 @@ class RequestOrchestrationService:
         return {
             "retrieved_cases": retrieved_cases,
             "stream": tracked_stream(),
+            "model_used": selected_model,
         }
 
-    def explain_prediction(self, text: str) -> str:
+    def explain_prediction(self, text: str, model: str | None = None) -> str:
         """Generate human-readable explanation for model output."""
         if self.classifier is None:
             raise RuntimeError(
@@ -126,6 +147,17 @@ class RequestOrchestrationService:
             category_confidence=prediction["category"].confidence,
             priority_confidence=prediction["priority"].confidence,
         )
-        explanation = self.llm.generate(prompt, temperature=0.1)
-        write_audit_log("explain", json.dumps({"text": text, "explanation": explanation}, ensure_ascii=False))
+        selected_model = model or self.llm.model
+        explanation = self.llm.generate(prompt, temperature=0.1, model=selected_model)
+        write_audit_log(
+            "explain",
+            json.dumps(
+                {
+                    "text": text,
+                    "explanation": explanation,
+                    "model_used": selected_model,
+                },
+                ensure_ascii=False,
+            ),
+        )
         return explanation

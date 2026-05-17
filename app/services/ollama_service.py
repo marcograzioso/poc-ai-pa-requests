@@ -20,10 +20,10 @@ class OllamaService:
         self.base_url = (base_url or settings.ollama_base_url).rstrip("/")
         self.model = model or settings.ollama_model
 
-    def generate_stream(self, prompt: str, temperature: float = 0.1) -> Iterator[str]:
+    def generate_stream(self, prompt: str, temperature: float = 0.1, model: str | None = None) -> Iterator[str]:
         """Stream text chunks from local LLM with defensive error handling."""
         payload: Dict[str, Any] = {
-            "model": self.model,
+            "model": model or self.model,
             "prompt": prompt,
             "stream": True,
             "options": {"temperature": temperature},
@@ -52,6 +52,6 @@ class OllamaService:
             logger.exception("Ollama stream parse failed")
             raise RuntimeError(f"Errore parsing stream Ollama: {exc}") from exc
 
-    def generate(self, prompt: str, temperature: float = 0.1) -> str:
+    def generate(self, prompt: str, temperature: float = 0.1, model: str | None = None) -> str:
         """Generate full text by joining streamed chunks."""
-        return "".join(self.generate_stream(prompt=prompt, temperature=temperature)).strip()
+        return "".join(self.generate_stream(prompt=prompt, temperature=temperature, model=model)).strip()

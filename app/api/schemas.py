@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List
+from typing import List, Literal
 
 from pydantic import BaseModel, Field
 
@@ -45,6 +45,7 @@ class DraftRequest(BaseModel):
 
     citizen_request_text: str = Field(..., min_length=3)
     top_k: int = Field(default=5, ge=1, le=10)
+    model: Literal["llama3", "qwen3.5:4b", "gemma3n:e2b"] = "llama3"
 
 
 class DraftResponse(BaseModel):

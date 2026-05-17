@@ -10,6 +10,7 @@ CATEGORIES = [
     "Mobilita",
     "Ambiente",
     "Servizi Sociali",
+    "Non Pertinente",
 ]
 
 PRIORITY_LEVELS = ["low", "medium", "high", "urgent"]
@@ -21,4 +22,5 @@ CATEGORY_TO_OFFICE = {
     "Mobilita": "Ufficio Mobilita e Viabilita",
     "Ambiente": "Ufficio Ambiente e Decoro Urbano",
     "Servizi Sociali": "Ufficio Servizi Sociali",
+    "Non Pertinente": "Ufficio Relazioni con il Pubblico (Filtro richieste)",
 }

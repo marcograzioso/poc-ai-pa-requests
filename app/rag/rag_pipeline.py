@@ -37,19 +37,26 @@ class RagAssistant:
         )
         return similar_cases, prompt
 
-    def draft_response_stream(self, new_request: str, top_k: int = 5) -> Tuple[List[Dict[str, str | float]], Iterator[str]]:
+    def draft_response_stream(
+        self,
+        new_request: str,
+        top_k: int = 5,
+        model: str | None = None,
+    ) -> Tuple[List[Dict[str, str | float]], Iterator[str]]:
         """Return retrieved cases and streamed draft chunks."""
         similar_cases, prompt = self._build_prompt_and_cases(new_request, top_k)
-        stream = self.llm.generate_stream(prompt=prompt, temperature=0.1)
+        stream = self.llm.generate_stream(prompt=prompt, temperature=0.1, model=model)
         return similar_cases, stream
 
-    def draft_response(self, new_request: str, top_k: int = 5) -> Dict[str, object]:
+    def draft_response(self, new_request: str, top_k: int = 5, model: str | None = None) -> Dict[str, object]:
         """Retrieve context and ask local LLM for a formal draft."""
         similar_cases, prompt = self._build_prompt_and_cases(new_request, top_k)
-        draft = self.llm.generate(prompt=prompt, temperature=0.1)
+        selected_model = model or self.llm.model
+        draft = self.llm.generate(prompt=prompt, temperature=0.1, model=selected_model)
 
         return {
             "draft_response": draft,
             "retrieved_cases": similar_cases,
             "generated_at": datetime.utcnow(),
+            "model_used": selected_model,
         }
