@@ -28,7 +28,7 @@ def main() -> None:
     ).tolist()
 
     embedder = EmbeddingService()
-    vectors = embedder.encode(text_for_embedding)
+    vectors = embedder.encode(text_for_embedding, is_query=False)
 
     metadata: List[Dict[str, str]] = []
     for row in df.to_dict(orient="records"):

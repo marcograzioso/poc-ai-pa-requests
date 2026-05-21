@@ -21,7 +21,7 @@ class SemanticRetriever:
     def search(self, text: str, top_k: int | None = None) -> List[Dict[str, str | float]]:
         """Return top-k nearest historical cases."""
         k = top_k or settings.top_k_retrieval
-        query_vector = self.embedder.encode([text]).astype("float32")
+        query_vector = self.embedder.encode([text], is_query=True).astype("float32")
         scores, indices = self.index.search(query_vector, k)
 
         results: List[Dict[str, str | float]] = []

@@ -38,7 +38,7 @@ class ClassificationService:
 
     def predict(self, text: str) -> Dict[str, PredictionResult]:
         """Predict all target labels from citizen request text."""
-        vector = self.embedder.encode([text])
+        vector = self.embedder.encode([text], is_query=True)
         category = self._predict_label(self.category_model, vector)
         priority = self._predict_label(self.priority_model, vector)
         office = PredictionResult(label=CATEGORY_TO_OFFICE.get(category.label, "Ufficio URP"), confidence=category.confidence)

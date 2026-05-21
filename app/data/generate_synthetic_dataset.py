@@ -6,7 +6,7 @@ import argparse
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import pandas as pd
 
@@ -42,36 +42,66 @@ REQUEST_TEMPLATES: Dict[str, List[str]] = {
         "Richiedo certificato di residenza storico per pratica universitaria. Quali sono tempi e costi?",
         "Ho bisogno della carta d'identita elettronica per mio figlio minorenne, come prenoto?",
         "Segnalo errore nei miei dati anagrafici presenti nel certificato scaricato online.",
+        "Devo richiedere il cambio di residenza per trasferimento in altro quartiere, quali passaggi devo seguire?",
+        "Chiedo appuntamento per rilascio certificato di stato di famiglia in bollo per uso notarile.",
+        "Non riesco a ottenere lo SPID perche i miei dati anagrafici risultano non allineati.",
+        "Richiedo estratto di nascita plurilingue per pratica estera e vorrei sapere se serve delega.",
+        "Ho smarrito la carta d'identita e devo ottenere un duplicato con urgenza per viaggio imminente.",
     ],
     "Tributi": [
         "Chiedo chiarimenti sul calcolo IMU per seconda casa ereditata nel 2025.",
         "Ho ricevuto un avviso TARI ma l'immobile risulta non occupato da mesi.",
         "Domando rateizzazione del debito relativo a tributi comunali arretrati.",
         "Desidero sapere se ho diritto a esenzione parziale TARI per nucleo numeroso.",
+        "Richiedo rettifica dell'avviso di pagamento per possibile duplicazione di importo.",
+        "Vorrei attivare addebito automatico per tributi comunali e conoscere le modalita.",
+        "Ho venduto un immobile e chiedo aggiornamento posizione tributaria dalla data del rogito.",
+        "Segnalo mancata registrazione del pagamento TARI effettuato tramite pagoPA.",
+        "Richiedo informazione su ravvedimento operoso per versamento IMU tardivo.",
     ],
     "Edilizia": [
         "Vorrei informazioni su SCIA per ristrutturazione interna senza modifiche strutturali.",
         "Richiedo stato della pratica permesso di costruire presentata a gennaio.",
         "Ho necessita di autorizzazione paesaggistica per installazione pergolato in giardino.",
         "Segnalo cantiere confinante con rumori oltre orario consentito e possibile abuso edilizio.",
+        "Chiedo elenco completo documenti per CILA relativa a manutenzione straordinaria appartamento.",
+        "Vorrei fissare un appuntamento tecnico per verifica conformita prima di presentare SCIA.",
+        "Richiedo accesso agli atti edilizi dell'immobile acquistato per verifica precedenti autorizzazioni.",
+        "Segnalo difformita tra progetto autorizzato e opere in corso nel cantiere vicino.",
+        "Domando tempi medi di rilascio agibilita dopo fine lavori e collaudo impianti.",
     ],
     "Mobilita": [
         "Richiedo pass residenti per zona ZTL, targa nuova dopo cambio veicolo.",
         "Segnalo disservizio nella linea autobus 7 con ritardi costanti in fascia mattutina.",
         "Domando autorizzazione temporanea di sosta per trasloco in via centrale.",
         "Vorrei chiarimenti su rinnovo contrassegno parcheggio disabili in scadenza.",
+        "Segnalo segnaletica orizzontale cancellata in prossimita della scuola primaria.",
+        "Richiedo installazione stallo disabili in prossimita della mia abitazione.",
+        "Vorrei sapere come presentare ricorso per sanzione ZTL notificata erroneamente.",
+        "Domando aggiornamenti sul piano viabilita durante lavori stradali in centro storico.",
+        "Chiedo autorizzazione per accesso occasionale in area pedonale per assistenza familiare.",
     ],
     "Ambiente": [
         "Segnalo mancata raccolta rifiuti organici da due settimane nel mio quartiere.",
         "Richiedo ritiro ingombranti a domicilio per vecchi mobili e materasso.",
         "Denuncio presenza di rifiuti abbandonati vicino al parco comunale.",
         "Vorrei indicazioni per compostaggio domestico e eventuali riduzioni tariffarie.",
+        "Segnalo cassonetto danneggiato che impedisce il corretto conferimento dei rifiuti.",
+        "Chiedo intervento di pulizia straordinaria per area verde con vetri e rifiuti sparsi.",
+        "Vorrei informazioni su calendario raccolta porta a porta per nuova utenza domestica.",
+        "Segnalo odori persistenti da impianto vicino e richiedo verifica ambientale.",
+        "Domando modalita di conferimento RAEE per elettrodomestici non funzionanti.",
     ],
     "Servizi Sociali": [
         "Richiedo informazioni per contributo affitto rivolto a nuclei con ISEE basso.",
         "Domando accesso al servizio assistenza domiciliare per genitore non autosufficiente.",
         "Necessito di appuntamento con assistente sociale per situazione familiare urgente.",
         "Chiedo chiarimenti su bonus alimentare e documentazione da presentare.",
+        "Richiedo valutazione per inserimento in graduatoria alloggio ERP per nucleo monogenitoriale.",
+        "Vorrei sapere come attivare supporto educativo domiciliare per minore con disabilita.",
+        "Domando accesso al contributo spese scolastiche per famiglia con ISEE sotto soglia.",
+        "Chiedo indicazioni per servizio trasporto sociale verso strutture sanitarie.",
+        "Segnalo situazione di fragilita economica improvvisa e necessito colloquio urgente.",
     ],
     "Non Pertinente": [
         "Volevo sapere i numeri vincenti del lotto di questa sera.",
@@ -79,15 +109,46 @@ REQUEST_TEMPLATES: Dict[str, List[str]] = {
         "Perche il mio smartphone si scarica velocemente?",
         "Messaggio promozionale: click qui per ricevere buoni regalo.",
         "Salve, questo non riguarda il comune ma un problema con il mio modem.",
+        "Cerco consigli su dieta personalizzata per perdere peso prima dell'estate.",
+        "Vendita online di prodotti cosmetici, scrivetemi per offerte esclusive.",
+        "La mia stampante non si collega al wifi, potete aiutarmi?",
+        "Vorrei prenotare una vacanza last minute, avete suggerimenti?",
+        "Questo messaggio e una catena promozionale e non riguarda servizi pubblici.",
     ],
 }
 
-RESPONSE_TEMPLATES = [
-    "Gentile cittadino/a, la Sua richiesta e stata presa in carico dall'ufficio competente. A seguito delle verifiche preliminari, Le confermiamo che ricevera riscontro formale entro {days} giorni lavorativi.",
-    "Si comunica che l'istanza e stata registrata con protocollo interno e inoltrata al settore responsabile. Qualora fossero necessari ulteriori documenti, sara contattato/a tramite i recapiti indicati.",
-    "In riferimento alla Sua segnalazione, l'Amministrazione ha avviato le opportune verifiche tecniche. L'esito dell'istruttoria Le sara trasmesso con comunicazione ufficiale.",
-    "La informiamo che, sulla base degli elementi forniti, la pratica puo procedere in via ordinaria. Restiamo a disposizione per eventuali integrazioni documentali.",
-]
+RESPONSE_SOLUTIONS: Dict[str, List[str]] = {
+    "Anagrafe": [
+        "Gentile cittadino/a, per completare la pratica anagrafica e sufficiente prenotare appuntamento tramite portale comunale o URP. Porti documento di identita valido, tessera sanitaria e modulo allegato. In caso di urgenza certificata, e disponibile slot prioritario entro {days} giorni lavorativi.",
+        "La Sua richiesta e stata lavorata: abbiamo verificato i dati e aperto rettifica anagrafica con codice pratica dedicato. Ricevera conferma via email con istruzioni per ritiro o download del certificato aggiornato entro {days} giorni lavorativi.",
+        "Per il rilascio richiesto abbiamo predisposto istruttoria semplificata. Le chiediamo solo integrazione fotografica conforme e pagamento dei diritti tramite pagoPA; a pagamento acquisito, il documento sara emesso entro {days} giorni lavorativi.",
+    ],
+    "Tributi": [
+        "In merito alla posizione tributaria, l'ufficio ha avviato ricalcolo puntuale sulla base dei dati catastali comunicati. Se emergera eccedenza, verra emesso provvedimento di sgravio o rimborso; in caso di debito residuo Le invieremo piano rateizzato entro {days} giorni lavorativi.",
+        "Abbiamo registrato la richiesta e aperto verifica su pagamento/avviso contestato. Le suggeriamo di allegare ricevuta pagoPA e documento immobile per accelerare istruttoria; riscontro tecnico previsto entro {days} giorni lavorativi.",
+        "Per la Sua istanza e stata avviata procedura di regolarizzazione guidata con eventuale ravvedimento. Ricevera prospetto importi aggiornato e istruzioni operative per il versamento entro {days} giorni lavorativi.",
+    ],
+    "Edilizia": [
+        "La pratica edilizia puo proseguire con iter ordinario: abbiamo inserito controllo preliminare documentale e Le invieremo check-list personalizzata (elaborati tecnici, asseverazioni, diritti) entro {days} giorni lavorativi.",
+        "Per la segnalazione su cantiere, e stato pianificato sopralluogo con nucleo tecnico comunale. Gli esiti e le eventuali prescrizioni verranno notificati formalmente entro {days} giorni lavorativi.",
+        "In riferimento alla richiesta autorizzativa, l'ufficio ha aperto istruttoria e calendarizzato verifica conformita urbanistica. Se non emergeranno criticita, Le trasmetteremo provvedimento o richiesta integrazione entro {days} giorni lavorativi.",
+    ],
+    "Mobilita": [
+        "Per la Sua richiesta di mobilita, abbiamo attivato il procedimento amministrativo e predisposto verifica dei requisiti (residenza, targa, titoli autorizzativi). L'esito con eventuale rilascio permesso sara disponibile entro {days} giorni lavorativi.",
+        "La segnalazione su viabilita/trasporto e stata inoltrata al gestore competente con livello di priorita operativo. E previsto aggiornamento intervento o risposta motivata entro {days} giorni lavorativi.",
+        "Per l'autorizzazione temporanea richiesta Le invieremo modulo precompilato e istruzioni per pagamento diritti. A documentazione completa, il nulla osta sara emesso entro {days} giorni lavorativi.",
+    ],
+    "Ambiente": [
+        "Abbiamo aperto ordine di servizio per il gestore igiene urbana con intervento programmato nell'area segnalata. Ricevera conferma di esecuzione o motivazione tecnica entro {days} giorni lavorativi.",
+        "Per la richiesta di ritiro/conferimento, Le invieremo calendario disponibile e modalita operative. Una volta confermata la prenotazione, l'intervento sara effettuato nella prima finestra utile, con riscontro entro {days} giorni lavorativi.",
+        "La segnalazione ambientale e stata trasmessa al nucleo di controllo territoriale per verifica puntuale. Eventuali azioni correttive e relative tempistiche Le saranno comunicate entro {days} giorni lavorativi.",
+    ],
+    "Servizi Sociali": [
+        "La Sua istanza sociale e stata presa in carico da assistente di riferimento. Entro {days} giorni lavorativi ricevera convocazione per colloquio e indicazione della documentazione necessaria alla valutazione.",
+        "Per il beneficio richiesto e stata avviata verifica requisiti ISEE e composizione nucleo. All'esito istruttorio Le comunicheremo ammissione, eventuale graduatoria e tempi di erogazione entro {days} giorni lavorativi.",
+        "Abbiamo classificato la pratica con priorita di tutela e attivato coordinamento con servizi territoriali. Le verra trasmesso piano di supporto iniziale o richiesta integrazione entro {days} giorni lavorativi.",
+    ],
+}
 
 
 def pick_weighted(distribution: Dict[str, float]) -> str:
@@ -146,7 +207,7 @@ def build_operator_response(priority: str, category: str) -> str:
             "istituzionali. La invitiamo a inoltrare una richiesta attinente ai procedimenti comunali."
         )
 
-    base = random.choice(RESPONSE_TEMPLATES)
+    base = random.choice(RESPONSE_SOLUTIONS.get(category, RESPONSE_SOLUTIONS["Anagrafe"]))
     days = {"low": 10, "medium": 7, "high": 4, "urgent": 2}[priority]
     return base.format(days=days)
 
@@ -223,7 +284,7 @@ def main() -> None:
     """CLI entrypoint for dataset generation."""
     parser = argparse.ArgumentParser(description="Generate synthetic PA requests dataset.")
     parser.add_argument("--output", type=str, default=str(settings.dataset_path), help="Output CSV path")
-    parser.add_argument("--rows", type=int, default=1500, help="Base number of rows before duplicates")
+    parser.add_argument("--rows", type=int, default=5000, help="Base number of rows before duplicates")
     args = parser.parse_args()
 
     rows = generate_rows(args.rows)

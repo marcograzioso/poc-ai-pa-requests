@@ -27,7 +27,7 @@ def main() -> None:
     df = df.dropna(subset=["citizen_request_text", "category", "priority"])
 
     embedder = EmbeddingService()
-    X = embedder.encode(df["citizen_request_text"].astype(str).tolist())
+    X = embedder.encode(df["citizen_request_text"].astype(str).tolist(), is_query=False)
 
     category_name, category_model, category_metrics = train_best_model(X, df["category"].to_numpy())
     priority_name, priority_model, priority_metrics = train_best_model(X, df["priority"].to_numpy())

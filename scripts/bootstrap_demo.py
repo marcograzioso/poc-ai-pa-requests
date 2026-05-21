@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import subprocess
 import sys
 from pathlib import Path
@@ -19,8 +20,20 @@ def run(module_path: str, *args: str) -> None:
 
 
 if __name__ == "__main__":
-    run("app.data.generate_synthetic_dataset")
-    run("app.ml.train")
+    parser = argparse.ArgumentParser(description="Bootstrap local PA AI demo artifacts")
+    parser.add_argument("--skip-distilbert", action="store_true", help="Skip DistilBERT fine-tuning step")
+    # add argument to skip all trainings
+    parser.add_argument("--skip-training", action="store_true", help="Skip all model training steps")
+    args = parser.parse_args()
+
+    # run("app.data.generate_synthetic_dataset")
+    if args.skip_training:
+        print("Skipping training steps as per argument. Make sure to have trained models for the demo to work.")
+    if not args.skip_training:
+        run("app.data.generate_synthetic_dataset")
+        run("app.ml.train")
+        if not args.skip_distilbert:
+            run("app.ml.train_distilbert")
     run("app.ml.evaluate")
     run("app.rag.indexing")
     print("Bootstrap completato: dataset, modelli e indice FAISS pronti.")

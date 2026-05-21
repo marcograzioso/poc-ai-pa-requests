@@ -22,7 +22,7 @@ def main() -> None:
 
     df = pd.read_csv(args.dataset).dropna(subset=["citizen_request_text", "category", "priority"])
     embedder = EmbeddingService()
-    X = embedder.encode(df["citizen_request_text"].astype(str).tolist())
+    X = embedder.encode(df["citizen_request_text"].astype(str).tolist(), is_query=False)
 
     category_model = load_model(settings.category_model_path)
     priority_model = load_model(settings.priority_model_path)
